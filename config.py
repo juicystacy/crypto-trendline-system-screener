@@ -103,5 +103,7 @@ LLM_CHART_CANDLES = 160              # candles drawn on the chart image
 # ----------------------------------------------------------------------------
 SCAN_INTERVAL_SEC = 3600             # 1-hour scan cycle
 WATCHLIST_FILE = "watchlist.json"    # persistent state between cycles
+HISTORY_FILE = "history.csv"         # persistent log of LLM-passed setups
+HISTORY_KEEP_DAYS = 180              # ~6 months; older rows dropped on each write
 MAX_API_RETRIES = 3
 RETRY_BACKOFF_SEC = 5

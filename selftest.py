@@ -191,6 +191,18 @@ def test_uptrend_pipeline() -> pd.DataFrame:
               abs(result["distance_pct"]) <= 0.5,
               f"got {result['distance_pct']}%")
 
+        # same_line: the SAME geometric line refit on a window shifted forward
+        # k bars (new anchor_ts, adjusted intercept) must compare equal — this
+        # is what stops the LLM from re-judging unchanged lines every scan.
+        k = 3
+        shifted = {**tl, "anchor_ts": tl["anchor_ts"] + k * TF_MS,
+                   "intercept": tl["slope"] * k + tl["intercept"]}
+        check("same_line: identical line with shifted anchor matches",
+              analysis.same_line(tl, shifted, TF_MS))
+        different = {**tl, "slope": tl["slope"] * 1.5}
+        check("same_line: a clearly different slope does NOT match",
+              not analysis.same_line(tl, different, TF_MS))
+
     # Last close pushed 2% above the line: still a valid line — distance
     # no longer gates qualification, it only sorts the table.
     far = zigzag_path()

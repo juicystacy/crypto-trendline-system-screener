@@ -243,6 +243,24 @@ def trendline_value_at(tl: dict, ts: int, tf_ms: int) -> float:
     return tl["slope"] * x + tl["intercept"]
 
 
+def same_line(a: dict, b: dict, tf_ms: int, tol_pct: float = 0.1) -> bool:
+    """
+    True if two fitted trendlines are geometrically ~identical, ignoring anchor.
+
+    Each scan refits the line on a fresh window, so anchor_ts/intercept shift even
+    when the line hasn't visually moved. Compare anchor-independently: project both
+    to a common ts and require the same level AND the same per-bar slope.
+    """
+    ref = b["anchor_ts"]
+    va, vb = trendline_value_at(a, ref, tf_ms), trendline_value_at(b, ref, tf_ms)
+    if vb == 0:
+        return False
+    same_level = abs(va - vb) / abs(vb) * 100 <= tol_pct
+    denom = abs(b["slope"]) or 1e-12
+    same_slope = abs(a["slope"] - b["slope"]) / denom <= 0.01
+    return same_level and same_slope
+
+
 def distance_to_trendline_pct(close: float, tl_value: float) -> float:
     """Signed distance of close from the line, in % (positive = above)."""
     if tl_value == 0:

@@ -63,6 +63,20 @@ The watchlist is persisted to `watchlist.json` between cycles and restarts.
 Trendlines are stored as `slope/intercept` anchored to a candle timestamp, so
 they are projected forward onto new candles in later cycles.
 
+## History log
+
+Every setup that **passes the LLM filter** is recorded to `history.csv` — one
+row per setup lifecycle. A row is written when the LLM first validates the setup
+(with the LLM-pass date and the watchlist columns: coin, timeframe, trend,
+distance, touches, correlations, close, LLM reason) and completed with the
+**breakout date** and outcome when the setup later breaks out and leaves the
+watchlist. Only LLM-passed setups are logged, so the file stays small.
+
+Rows are deduped per `coin|timeframe` (one open row per pair) and auto-pruned:
+anything older than `HISTORY_KEEP_DAYS` (180 days ≈ 6 months) is dropped on every
+write. CSV, so it opens directly in Excel. Dates are screener events (detected on
+the next scan cycle), not exact candle times.
+
 ## Install
 
 ```bash
@@ -116,15 +130,18 @@ limits are respected (`enableRateLimit` in ccxt).
 | `exchange.py` | ccxt data access with retry/rate-limit handling |
 | `analysis.py` | swings, trendline, patterns, breakout logic |
 | `llm_filter.py` | renders charts and asks Claude vision for a verdict |
+| `history.py` | appends LLM-passed setups to the history CSV, auto-prunes |
 | `watchlist.py` | JSON-persisted watchlist state |
 | `screener.py` | scan cycle orchestration, rich output, main loop |
 | `selftest.py` | offline test suite (no network needed) |
 | `diagnose.py` | one-off connectivity / data debugging helper |
 | `watchlist.json` | generated at runtime — current watchlist state |
+| `history.csv` | generated at runtime — log of LLM-passed setups (auto-pruned to 180 days) |
 
 ## Tuning
 
 All thresholds live in `config.py`: swing sensitivity (`SWING_ORDER`),
 required touches (`MIN_TOUCHES`), the 0.5% touch tolerance, pivot/close pierce
 tolerances, minimum slope, stablecoin range guard, volume-spike multiple,
-hammer geometry, the LLM model, and the scan interval.
+hammer geometry, the LLM model, the scan interval, and how long history rows are
+kept (`HISTORY_KEEP_DAYS`).

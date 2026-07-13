@@ -1,0 +1,4 @@
+coin,timeframe,trend,valid_date,entry_price,breakout_date,exit_price,distance_pct,touches,corr_30d,corr_90d,close,llm_reason,outcome,logged_ts
+ARUSDT,d1,up,2026-07-13 00:28,,,,+4.764,3,0.43,0.29,1.949,"Line connects rising pullback closes (~x25, x33, x60, x140) with higher highs between, and no closes clearly break below it.",,1783902491262
+PTBUSDT,d1,down,2026-07-13 00:40,,,,-3.133,3,0.39,0.27,0.0004885,Line correctly connects a descending series of pullback closes acting as resistance with clear slope and no major close breaches.,,1783903202654
+TSMUSDT,d1,up,2026-07-13 00:44,,,,+0.496,4,,,437.02,"Line rests on rising pullback closes from x=0 to x=90 with consistent higher lows and higher highs, no significant close violations.",,1783903461752

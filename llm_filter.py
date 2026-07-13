@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 
 import analysis
 import config
+import history
 
 log = logging.getLogger("screener")
 
@@ -27,7 +28,8 @@ The blue line is a {side} trendline for a claimed {direction}trend. Judge it lik
 - Pivots are candle CLOSES, not wicks: the line must rest on the pullback closes (>= 3 rejections touching the line). Wicks poking through the line are acceptable noise.
 - Each pullback close touching the line must ALSO be a Higher Low (uptrend) / Lower High (downtrend) versus the previous pullback — the line connects a strictly {direction}ward-stepping sequence of pullback closes, not arbitrary touches that happen to line up.
 - After each pullback, the following swing should make a new Higher High (uptrend) / Lower Low (downtrend). One swing failing to make a new extreme is acceptable; more than one means the trend is stalling and the setup is invalid.
-- The line must NOT be cut through by candle closes anywhere along its length.
+- A new Higher High / Lower Low counts ONLY when it comes from a consistent stepping swing. A single spike candle that juts far out and immediately reverts does NOT count as a valid extreme — discount one-off spikes and judge the consistent structure. Be strict here: an otherwise flat/ranging chart with one spike is NOT a trend.
+- The line must NOT be cut through by candle closes anywhere along its length. Reject if closes pierce it repeatedly (a mid-channel regression line that price closes above/below many times is not a trendline), even if the overall drift matches the claimed direction.
 - It must have a clear visible slope — a near-horizontal line is a support/resistance level, not a trendline.
 - The line must span the trend: touches only clustered at the right edge (line detached from all earlier structure) are invalid.
 - Do NOT judge whether price is currently near the line — a valid line that price has moved away from is still a valid line; distance is tracked separately.
@@ -142,6 +144,8 @@ def apply_filter(watchlist: dict, cache: dict, fetch) -> None:
                         entry["symbol"], entry["timeframe"], exc)
             continue
         entry["llm"] = {**verdict, "line": line_sig(entry)}
+        if verdict["valid"]:
+            history.log_validated(entry)
         log.info("LLM %s %s %s — %s",
                  "VALID" if verdict["valid"] else "REJECT",
                  entry["symbol"], entry["timeframe"], verdict["reason"])

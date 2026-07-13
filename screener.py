@@ -29,6 +29,7 @@ from rich.table import Table
 import analysis
 import config
 import exchange as ex
+import history
 import llm_filter
 import watchlist as wl
 
@@ -112,6 +113,15 @@ def scan_structures(exchange, candidates: dict, watchlist: dict,
             evaluation = analysis.evaluate_symbol_timeframe(
                 df, config.TIMEFRAME_MS[tf])
             if evaluation:
+                # Refitting every cycle churns anchor_ts and drops the LLM verdict,
+                # which re-judges the whole watchlist each scan (real API cost). If
+                # the line is geometrically unchanged, keep the existing entry as-is
+                # (verdict + tl_fit_ts intact) and skip the upsert.
+                prev = watchlist.get(wl.entry_key(symbol, tf))
+                if prev and analysis.same_line(prev["trendline"],
+                                               evaluation["trendline"],
+                                               config.TIMEFRAME_MS[tf]):
+                    continue
                 wl.upsert_entry(watchlist, symbol, tf, evaluation, corrs)
                 log.info("QUALIFIED %s %s (%strend, dist %.3f%%)",
                          symbol, config.TIMEFRAMES[tf],
@@ -150,6 +160,7 @@ def prune_broken_entries(exchange, watchlist: dict, cache: dict,
             # Old-schema entries (pre tl_fit_ts) fall back to added_ts.
             since_ts=entry.get("tl_fit_ts", entry["added_ts"]))
         if broken:
+            history.log_closed(entry, reason)
             wl.remove_entry(watchlist, key, reason)
             continue
 
