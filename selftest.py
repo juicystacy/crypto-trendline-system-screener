@@ -292,9 +292,18 @@ def test_breakout(df: pd.DataFrame) -> None:
     broken_nv, _ = analysis.check_breakout(nv3, tl, "up", TF_MS, since_ts=0)
     check("no volume spike on candle 1 blocks the invalidation", not broken_nv)
 
+    # Shallow fake-break: closes ~0.3% below the line — within
+    # CLOSE_PIERCE_TOL_PCT, the same noise the line fitter tolerates.
+    # Must NOT fire, or prune removes an entry the next scan re-adds.
+    sh = append_candle(df, close=line_at(df) * 0.997, volume=5000)
+    sh2 = append_candle(sh, close=line_at(sh) * 0.997, volume=1000)
+    sh3 = append_candle(sh2, close=line_at(sh2) * 0.997, volume=1000)
+    broken_sh, _ = analysis.check_breakout(sh3, tl, "up", TF_MS, since_ts=0)
+    check("shallow break within CLOSE_PIERCE_TOL_PCT does NOT fire", not broken_sh)
+
 
 def test_llm_chart_render() -> None:
-    print("\n[7] LLM filter chart rendering (offline)")
+    print("\n[6] LLM filter chart rendering (offline)")
     import llm_filter
     df = candles_from_path(zigzag_path())
     result = analysis.evaluate_symbol_timeframe(df, TF_MS)
@@ -306,7 +315,7 @@ def test_llm_chart_render() -> None:
 
 
 def test_correlation() -> None:
-    print("\n[6] BTC correlation filter")
+    print("\n[7] BTC correlation filter")
     rng = np.random.default_rng(42)
     rets = rng.normal(0, 0.02, 120)
     btc = pd.Series(100 * np.cumprod(1 + rets))

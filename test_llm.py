@@ -35,11 +35,9 @@ def main() -> int:
 
     try:
         verdict = llm_filter.judge_entry(client, df, entry, TF_MS)
-    except TypeError as exc:          # SDK raises this when no credentials resolve
-        if "authentication" in str(exc).lower():
-            print("no credentials — set ANTHROPIC_API_KEY in this shell and re-run.")
-            return 1
-        raise
+    except anthropic.AuthenticationError:
+        print("no credentials — set ANTHROPIC_API_KEY in this shell and re-run.")
+        return 1
 
     # Contract the screener relies on: a dict with a bool `valid` + string reason.
     assert isinstance(verdict, dict), f"expected dict, got {type(verdict)}"

@@ -143,11 +143,13 @@ def prune_broken_entries(exchange, watchlist: dict, cache: dict,
         entry = watchlist[key]
         tf = entry["timeframe"]
         if tf not in config.TIMEFRAMES:      # tf removed from config (e.g. 15m)
+            history.log_closed(entry, f"timeframe {tf} disabled")
             wl.remove_entry(watchlist, key, f"timeframe {tf} disabled")
             continue
         tf_ms = config.TIMEFRAME_MS[tf]
 
         if active_symbols is not None and entry["symbol"] not in active_symbols:
+            history.log_closed(entry, "symbol delisted / inactive")
             wl.remove_entry(watchlist, key, "symbol delisted / inactive")
             continue
 
@@ -264,7 +266,7 @@ def run_cycle(exchange, watchlist: dict, cycle_no: int,
 
     if config.LLM_FILTER:
         llm_filter.apply_filter(
-            watchlist, cache,
+            watchlist,
             lambda sym, tf: fetch_cached(exchange, cache, sym, tf))
 
     wl.save_watchlist(watchlist)

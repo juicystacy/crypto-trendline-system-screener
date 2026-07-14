@@ -318,6 +318,12 @@ def check_breakout(df: pd.DataFrame, tl: dict, direction: str,
     Downtrend (resistance break) is the mirror image: closes ABOVE the
     line and C2 must NOT be a shooting star.
 
+    "Through the line" uses the same CLOSE_PIERCE_TOL_PCT tolerance as
+    fit_pivot_line's candle-close validation: a close within the tolerance
+    band is fake-break noise the fitter would still accept, so counting it
+    here would remove an entry the very next scan re-adds (churn + a bogus
+    breakout row in history + a duplicate LLM judgment).
+
     Every 3-candle window in the fetched history is scanned (bounded only
     by volume-MA warm-up and `since_ts`) — not just the last 3 candles — so
     a sequence that completed between hourly scan cycles (e.g. on the 15m
@@ -336,11 +342,12 @@ def check_breakout(df: pd.DataFrame, tl: dict, direction: str,
     vol_ma = df["volume"].rolling(config.VOL_MA_LEN).mean()
     tl_vals = df["ts"].apply(lambda ts: trendline_value_at(tl, int(ts), tf_ms))
 
+    tol = config.CLOSE_PIERCE_TOL_PCT / 100.0
     if direction == "up":
-        beyond = df["close"] < tl_vals          # closed below support
+        beyond = df["close"] < tl_vals * (1 - tol)   # closed below support
         pattern_exception = is_hammer
     else:
-        beyond = df["close"] > tl_vals          # closed above resistance
+        beyond = df["close"] > tl_vals * (1 + tol)   # closed above resistance
         pattern_exception = is_shooting_star
 
     for i in range(config.VOL_MA_LEN, len(df) - 2):
@@ -376,7 +383,8 @@ def evaluate_symbol_timeframe(df: pd.DataFrame,
       -> 0.5% distance check on the latest close.
 
     A rising support line = uptrend, a falling resistance line = downtrend;
-    when both sides produce a valid line the one with more touches wins.
+    when both sides produce a valid line the one with more touches wins
+    (ties: support/up wins).
 
     Returns a watchlist-ready dict or None if any rule fails.
     """

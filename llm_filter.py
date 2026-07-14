@@ -56,7 +56,9 @@ def render_chart(df, entry, tf_ms: int) -> bytes:
     tl = entry["trendline"]
     line = [analysis.trendline_value_at(tl, int(ts), tf_ms) for ts in d["ts"]]
 
-    fig, ax = plt.subplots(figsize=(12, 6), dpi=100)
+    # ponytail: 800x400 px ≈ 430 image tokens vs 960 at 1200x600 — halves the
+    # per-judgment cost; bump back to (12, 6) if the judge starts misreading charts.
+    fig, ax = plt.subplots(figsize=(8, 4), dpi=100)
     up = d["close"] >= d["open"]
     ax.vlines(d.index, d["low"], d["high"],
               color=["green" if u else "red" for u in up], linewidth=0.7)
@@ -102,7 +104,7 @@ def judge_entry(client, df, entry, tf_ms: int) -> dict | None:
     return json.loads(text)
 
 
-def apply_filter(watchlist: dict, cache: dict, fetch) -> None:
+def apply_filter(watchlist: dict, fetch) -> None:
     """
     Judge every watchlist entry whose trendline was (re)fitted since its last
     verdict. Verdicts are stored on the entry (entry["llm"]) and shown in the

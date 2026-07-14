@@ -59,6 +59,8 @@ def main(symbols: list[str]):
     xch = ex.build_exchange()
     btc_d = ex.fetch_ohlcv_df(xch, config.BTC_SYMBOL, "1d",
                               config.DAILY_CANDLE_LIMIT)
+    if btc_d is None:
+        sys.exit("cannot fetch BTC daily data — check proxy/VPS connection")
 
     for base in symbols:
         symbol = f"{base.upper()}/USDT:USDT"
